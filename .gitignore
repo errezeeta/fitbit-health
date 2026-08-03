@@ -1,0 +1,28 @@
+*.db
+*.sqlite
+*.sqlite3
+*.apk
+*.aab
+*.jsonl
+.env
+.env.*
+!.env.example
+*token*
+*secret*
+*credential*
+*google*
+*tailscale*
+
+# Android
+.gradle/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
