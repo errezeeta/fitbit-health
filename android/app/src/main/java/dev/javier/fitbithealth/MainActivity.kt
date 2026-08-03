@@ -5,33 +5,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
+import dev.javier.fitbithealth.data.api.HealthApi
 import dev.javier.fitbithealth.ui.dashboard.DashboardViewModel
 import dev.javier.fitbithealth.ui.chat.HealthChatScreen
-import dev.javier.fitbithealth.ui.chat.ChatState
 import dev.javier.fitbithealth.ui.chat.HealthChatViewModel
 import dev.javier.fitbithealth.ui.dashboard.DashboardScreen
-import dev.javier.fitbithealth.ui.dashboard.DashboardState
 import dev.javier.fitbithealth.ui.navigation.AppNavigation
 import dev.javier.fitbithealth.ui.settings.SettingsScreen
 import dev.javier.fitbithealth.ui.sleep.SleepScreen
-import dev.javier.fitbithealth.ui.sleep.SleepState
 import dev.javier.fitbithealth.ui.sleep.SleepViewModel
 import dev.javier.fitbithealth.ui.trends.TrendsScreen
-import dev.javier.fitbithealth.ui.trends.TrendsState
 import dev.javier.fitbithealth.ui.trends.TrendsViewModel
 import dev.javier.fitbithealth.ui.metrics.HealthRange
+import dev.javier.fitbithealth.data.api.HealthApiFactory
 
 class MainActivity : ComponentActivity() {
     private lateinit var container: AppContainer
+    private lateinit var dashboardViewModel: DashboardViewModel
+    private lateinit var sleepViewModel: SleepViewModel
+    private lateinit var chatViewModel: HealthChatViewModel
+    private lateinit var trendsViewModel: TrendsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         container = AppContainer(applicationContext)
-        val api = container.apiOrNull()
-        val dashboardViewModel = DashboardViewModel(api)
-        val sleepViewModel = SleepViewModel(api)
-        val chatViewModel = HealthChatViewModel(api)
-        val trendsViewModel = TrendsViewModel(api)
+        initViewModels()
         setContent {
             MaterialTheme {
                 AppNavigation(
@@ -62,16 +60,41 @@ class MainActivity : ComponentActivity() {
                     },
                     settingsContent = {
                         val settings = container.currentSettings()
-                        SettingsScreen(settings.gatewayUrl, { url, token ->
-                            settings.gatewayUrl = url
-                            settings.gatewayToken = token
-                        }, { _, _ -> false })
+                        SettingsScreen(
+                            initialUrl = settings.gatewayUrl,
+                            initialToken = settings.gatewayToken,
+                            onSave = { url, token ->
+                                settings.gatewayUrl = url
+                                settings.gatewayToken = token
+                                initViewModels()
+                                loadAll()
+                            },
+                            onTestConnection = { url, token ->
+                                runCatching {
+                                    val api = HealthApiFactory().create(url, token)
+                                    api.health()
+                                    true
+                                }.getOrDefault(false)
+                            },
+                        )
                     },
                 )
             }
         }
-        dashboardViewModel.load(java.time.LocalDate.now().toString())
+        loadAll()
+    }
+
+    private fun initViewModels() {
+        val api = container.apiOrNull()
+        dashboardViewModel = DashboardViewModel(api)
+        sleepViewModel = SleepViewModel(api)
+        chatViewModel = HealthChatViewModel(api)
+        trendsViewModel = TrendsViewModel(api)
+    }
+
+    private fun loadAll() {
         val today = java.time.LocalDate.now().toString()
+        dashboardViewModel.load(today)
         sleepViewModel.load(today, today)
         trendsViewModel.load(today, today)
     }
