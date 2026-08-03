@@ -58,6 +58,8 @@ class HealthApiFactory {
                     .addInterceptor { chain ->
                         val request = chain.request().newBuilder()
                             .header("Authorization", "Bearer $token")
+                            .header("ngrok-skip-browser-warning", "true")
+                            .header("User-Agent", "FitbitHealth/1.0")
                             .build()
                         chain.proceed(request)
                     }
