@@ -46,11 +46,14 @@ class MainActivity : ComponentActivity() {
             ) {
                 AppNavigation(
                     dashboardContent = { onMetricClick ->
+                        val hrValues = dashboardViewModel.heartRate.collectAsState().value
+                            .mapNotNull { it.value?.toFloat() }
                         DashboardScreen(
                             state = dashboardViewModel.state.collectAsState().value,
                             onRetry = { dashboardViewModel.load(java.time.LocalDate.now().toString()) },
                             onSync = { dashboardViewModel.syncNow() },
                             onMetricClick = onMetricClick,
+                            heartRateValues = hrValues,
                         )
                     },
                     sleepContent = {

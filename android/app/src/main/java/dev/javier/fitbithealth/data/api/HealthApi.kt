@@ -40,6 +40,9 @@ interface HealthApi {
         @Query("end") end: String,
     ): TrendsResponse
 
+    @GET("api/v1/heart-rate")
+    suspend fun heartRate(@Query("day") day: String): List<MetricPoint>
+
     @POST("api/v1/chat")
     suspend fun chat(@Body request: ChatRequest): ChatResponse
 }

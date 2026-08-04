@@ -107,6 +107,27 @@ class FitbitRepository:
                 result = [dict(row) for row in reversed(fallback)]
             return result
 
+    def heart_rate(self, day: str) -> list[dict[str, Any]]:
+        """HR intraday agregado por minuto (5s raw → ~1.440 puntos/día)."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT substr(time, 1, 5) AS minute, AVG(value) AS value FROM heart_rate "
+                "WHERE date = ? GROUP BY minute ORDER BY minute",
+                (day,),
+            ).fetchall()
+            result = [{"timestamp": f"{day}T{row[0]}:00", "value": round(row[1], 1)} for row in rows]
+            if not result:
+                # Fallback: último día con datos
+                last = connection.execute("SELECT MAX(date) FROM heart_rate").fetchone()
+                if last and last[0]:
+                    rows = connection.execute(
+                        "SELECT substr(time, 1, 5) AS minute, AVG(value) AS value FROM heart_rate "
+                        "WHERE date = ? GROUP BY minute ORDER BY minute",
+                        (last[0],),
+                    ).fetchall()
+                    result = [{"timestamp": f"{last[0]}T{row[0]}:00", "value": round(row[1], 1)} for row in rows]
+            return result
+
     @staticmethod
     def _value(connection: sqlite3.Connection, query: str, day: str) -> Any:
         row = connection.execute(query, (day,)).fetchone()

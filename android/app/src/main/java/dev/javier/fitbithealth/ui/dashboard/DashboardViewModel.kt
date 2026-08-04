@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.javier.fitbithealth.data.api.DashboardResponse
 import dev.javier.fitbithealth.data.api.HealthApi
+import dev.javier.fitbithealth.data.api.MetricPoint
 import dev.javier.fitbithealth.data.api.SyncJobResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,10 @@ class DashboardViewModel(private var api: HealthApi?) : ViewModel() {
     private val _state = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state: StateFlow<DashboardState> = _state.asStateFlow()
 
+    // HR intraday del día (para el gráfico protagonista)
+    private val _heartRate = MutableStateFlow<List<MetricPoint>>(emptyList())
+    val heartRate: StateFlow<List<MetricPoint>> = _heartRate.asStateFlow()
+
     fun updateApi(newApi: HealthApi?) {
         api = newApi
     }
@@ -33,7 +38,10 @@ class DashboardViewModel(private var api: HealthApi?) : ViewModel() {
         viewModelScope.launch {
             runCatching { gateway.dashboard(day) }
                 .onSuccess { _state.value = DashboardState.Ready(it) }
-                .onFailure { _state.value = DashboardState.Error(it.message ?: "No se pudo cargar el dashboard") }
+                .onFailure { error -> _state.value = DashboardState.Error(error.message ?: "Error al cargar") }
+            runCatching { gateway.heartRate(day) }
+                .onSuccess { _heartRate.value = it }
+                .onFailure { _heartRate.value = emptyList() }
         }
     }
 

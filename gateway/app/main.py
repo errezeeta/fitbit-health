@@ -54,6 +54,10 @@ def create_app(*, database_path: str, gateway_token: str) -> FastAPI:
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
 
+    @app.get("/api/v1/heart-rate")
+    def heart_rate(day: date = Query(...), _: bool = Depends(auth)):
+        return repository.heart_rate(day.isoformat())
+
     @app.post("/api/v1/sync", status_code=202)
     def start_sync(_: bool = Depends(auth)):
         try:
