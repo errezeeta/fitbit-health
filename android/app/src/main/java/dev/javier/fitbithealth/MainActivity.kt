@@ -66,7 +66,11 @@ class MainActivity : ComponentActivity() {
                             onSave = { url, token ->
                                 settings.gatewayUrl = url
                                 settings.gatewayToken = token
-                                initViewModels()
+                                val newApi = container.apiOrNull()
+                                dashboardViewModel.updateApi(newApi)
+                                sleepViewModel.updateApi(newApi)
+                                chatViewModel.updateApi(newApi)
+                                trendsViewModel.updateApi(newApi)
                                 loadAll()
                             },
                             onTestConnection = { url, token ->

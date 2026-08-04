@@ -20,7 +20,8 @@ sealed interface ChatState {
     data class Error(val messages: List<ChatMessage>, val message: String) : ChatState
 }
 
-class HealthChatViewModel(private val api: HealthApi?) : ViewModel() {
+class HealthChatViewModel(private var api: HealthApi?) : ViewModel() {
+    fun updateApi(newApi: HealthApi?) { api = newApi }
     private val _state = MutableStateFlow<ChatState>(ChatState.Idle)
     val state: StateFlow<ChatState> = _state.asStateFlow()
 

@@ -16,9 +16,13 @@ sealed interface DashboardState {
     data class Error(val message: String, val canRetry: Boolean = true) : DashboardState
 }
 
-class DashboardViewModel(private val api: HealthApi?) : ViewModel() {
+class DashboardViewModel(private var api: HealthApi?) : ViewModel() {
     private val _state = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state: StateFlow<DashboardState> = _state.asStateFlow()
+
+    fun updateApi(newApi: HealthApi?) {
+        api = newApi
+    }
 
     fun load(day: String) {
         _state.value = DashboardState.Loading

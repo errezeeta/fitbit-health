@@ -13,10 +13,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
@@ -50,23 +48,30 @@ fun AppNavigation(
         NavItem(SettingsRoute, "Ajustes", Icons.Default.Settings),
     )
     val entry by navController.currentBackStackEntryAsState()
+
     Scaffold(
         bottomBar = {
             NavigationBar {
                 items.forEach { item ->
                     NavigationBarItem(
                         selected = entry?.destination?.hasRoute(item.route::class) == true,
-                        onClick = { navController.navigate(item.route) },
+                        onClick = {
+                            navController.navigate(item.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         label = { Text(item.label) },
                     )
                 }
             }
         },
-    ) { _ ->
+    ) { padding ->
         NavHost(
-            navController,
+            navController = navController,
             startDestination = DashboardRoute,
+            modifier = Modifier.padding(padding),
         ) {
             composable<DashboardRoute> { dashboardContent() }
             composable<SleepRoute> { sleepContent() }

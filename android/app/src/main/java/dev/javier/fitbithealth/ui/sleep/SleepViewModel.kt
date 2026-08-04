@@ -15,7 +15,8 @@ sealed interface SleepState {
     data class Error(val message: String) : SleepState
 }
 
-class SleepViewModel(private val api: HealthApi?) : ViewModel() {
+class SleepViewModel(private var api: HealthApi?) : ViewModel() {
+    fun updateApi(newApi: HealthApi?) { api = newApi }
     private val _state = MutableStateFlow<SleepState>(SleepState.Loading)
     val state: StateFlow<SleepState> = _state.asStateFlow()
 

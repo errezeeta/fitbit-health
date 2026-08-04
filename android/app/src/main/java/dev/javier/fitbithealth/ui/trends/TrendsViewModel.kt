@@ -15,7 +15,8 @@ sealed interface TrendsState {
     data class Error(val message: String) : TrendsState
 }
 
-class TrendsViewModel(private val api: HealthApi?) : ViewModel() {
+class TrendsViewModel(private var api: HealthApi?) : ViewModel() {
+    fun updateApi(newApi: HealthApi?) { api = newApi }
     private val _state = MutableStateFlow<TrendsState>(TrendsState.Loading)
     val state: StateFlow<TrendsState> = _state.asStateFlow()
 
