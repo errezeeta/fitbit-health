@@ -34,7 +34,6 @@ import dev.javier.fitbithealth.ui.theme.NeoSurface
 
 private val DeepColor = Color(0xFF8E8E93)
 private val LightColor = Color(0xFFB0B0B5)
-private val RemColor = Color(0xFFD9A962)
 private val AwakeColor = Color(0xFF4A4A4F)
 
 @Composable
@@ -78,6 +77,7 @@ private fun SleepDetail(session: SleepSession) {
     val rem = session.remMinutes ?: 0
     val awake = session.awakeMinutes ?: 0
     val total = (deep + light + rem + awake).coerceAtLeast(1)
+    val accent = MaterialTheme.colorScheme.primary
 
     val start = parseMinutes(session.startTime)
     val end = parseMinutes(session.endTime)
@@ -115,6 +115,7 @@ private fun SleepDetail(session: SleepSession) {
                     sleepStartMinutes = start,
                     sleepEndMinutes = end,
                     modifier = Modifier.fillMaxSize(),
+                    accent = accent,
                 )
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -140,7 +141,7 @@ private fun SleepDetail(session: SleepSession) {
             // Tabla de fases con lecturas de instrumento
             PhaseRow("Profundo", deep, deep * 100 / total, DeepColor)
             PhaseRow("Ligero", light, light * 100 / total, LightColor)
-            PhaseRow("REM", rem, rem * 100 / total, RemColor)
+            PhaseRow("REM", rem, rem * 100 / total, accent)
             PhaseRow("Despierto", awake, awake * 100 / total, AwakeColor)
 
             HorizontalDivider(color = NeoOutline, thickness = 0.5.dp)

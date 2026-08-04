@@ -12,6 +12,10 @@ import androidx.compose.ui.unit.sp
 // ── Tema "Pulse" — instrumento de salud, no app de marketing ──
 // Sujeto: un dispositivo de precisión. Un acento (ámbar), negro profundo,
 // cifras tabulares. Cada decisión viene del mundo del dato biométrico.
+//
+// v0.10: Material You dinámico (Android 12+) + base Hermes.
+// - Android 12+: el sistema inyecta la paleta del wallpaper (dynamic color).
+// - Android <12: fallback azul eléctrico Hermes (#2E6BFF) + lavanda.
 
 val NeoBackground = Color(0xFF0B0B0D)      // negro profundo
 val NeoSurface = Color(0xFF131316)         // tarjetas, +1 paso
@@ -21,10 +25,10 @@ val NeoOnBackground = Color(0xFFF4F2EE)    // blanco cálido (no puro)
 val NeoOnSurfaceMuted = Color(0xFF8A888F)  // gris instrumento
 val NeoOutline = Color(0xFF232327)         // hairline dividers
 
-// ÚNICO acento: ámbar dorado (el latido). Nada más de color.
-val Accent = Color(0xFFD9A962)
-val AccentDim = Color(0xFFB98A3E)
-val AccentSoft = Color(0xFF2A2418)         // fondo de selección
+// Acento de marca: azul eléctrico Hermes (fallback sin dynamic color)
+val Accent = Color(0xFF2E6BFF)
+val AccentDim = Color(0xFF1E4FD6)
+val AccentSoft = Color(0xFF16234A)         // fondo de selección
 
 val Danger = Color(0xFFFF6B5E)             // solo para errores
 

@@ -32,15 +32,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import dev.javier.fitbithealth.data.api.MetricPoint
 import dev.javier.fitbithealth.ui.charts.InteractiveLineChart
 import dev.javier.fitbithealth.ui.theme.DataFace
-import dev.javier.fitbithealth.ui.theme.MetricColors
 import dev.javier.fitbithealth.ui.theme.NeoOnSurfaceMuted
 import dev.javier.fitbithealth.ui.theme.NeoOutline
 import dev.javier.fitbithealth.ui.theme.NeoSurface
@@ -51,7 +53,7 @@ fun DashboardScreen(
     onRetry: () -> Unit,
     onSync: () -> Unit,
     onMetricClick: (String) -> Unit = {},
-    heartRateValues: List<Float> = emptyList(),
+    heartRatePoints: List<MetricPoint> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     when (state) {
@@ -68,7 +70,7 @@ fun DashboardScreen(
             Text(state.message, color = MaterialTheme.colorScheme.error)
             Button(onClick = onRetry) { Text("Reintentar") }
         }
-        is DashboardState.Ready -> DashboardContent(state, onSync, onMetricClick, heartRateValues)
+        is DashboardState.Ready -> DashboardContent(state, onSync, onMetricClick, heartRatePoints)
     }
 }
 
@@ -77,15 +79,19 @@ private fun DashboardContent(
     state: DashboardState.Ready,
     onSync: () -> Unit,
     onMetricClick: (String) -> Unit,
-    heartRateValues: List<Float>,
+    heartRatePoints: List<MetricPoint>,
 ) {
     val dashboard = state.dashboard
     val rhr = dashboard.restingHeartRate
+    val heartRateValues = heartRatePoints.mapNotNull { it.value?.toFloat() }
     val stats = buildList {
         dashboard.hrv?.let { add("HRV" to "${it.toInt()} ms") }
         dashboard.spo2?.let { add("SpO₂" to "$it%") }
         dashboard.steps?.let { add("Pasos" to it.toString()) }
     }
+
+    // Punto seleccionado al tocar el gráfico
+    var selectedPoint by remember { mutableStateOf<MetricPoint?>(null) }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
@@ -159,8 +165,12 @@ private fun DashboardContent(
                 if (heartRateValues.size >= 2) {
                     InteractiveLineChart(
                         values = heartRateValues,
-                        color = MetricColors.HeartRate,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxWidth().height(170.dp),
+                        onValueSelected = { index, _ ->
+                            selectedPoint = heartRatePoints.getOrNull(index)
+                        },
+                        onSelectionCleared = { selectedPoint = null },
                     )
                 } else {
                     Text(
@@ -168,6 +178,12 @@ private fun DashboardContent(
                         style = MaterialTheme.typography.bodySmall,
                         color = NeoOnSurfaceMuted,
                     )
+                }
+                Spacer(Modifier.height(10.dp))
+                // Detalle del punto tocado
+                selectedPoint?.let { point ->
+                    HrPointDetail(point, heartRatePoints)
+                    Spacer(Modifier.height(4.dp))
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -217,7 +233,7 @@ private fun PulseDot() {
         Modifier
             .size((14 * scale).dp)
             .clip(CircleShape)
-            .background(MetricColors.HeartRate),
+            .background(MaterialTheme.colorScheme.primary),
     )
 }
 
@@ -226,6 +242,56 @@ private fun heartRateStats(values: List<Float>): String {
     val min = values.minOrNull()?.toInt()
     val max = values.maxOrNull()?.toInt()
     return if (min != null && max != null) "$min – $max bpm" else ""
+}
+
+/** Detalle enriquecido del punto tocado: hora, valor, delta y contexto del día. */
+@Composable
+private fun HrPointDetail(point: MetricPoint, all: List<MetricPoint>) {
+    val value = point.value?.toInt() ?: 0
+    val idx = all.indexOfFirst { it.timestamp == point.timestamp }
+    val prev = if (idx > 0) all[idx - 1].value?.toInt() else null
+    val delta = if (prev != null) value - prev else null
+    val dayMin = all.mapNotNull { it.value?.toInt() }.minOrNull()
+    val dayMax = all.mapNotNull { it.value?.toInt() }.maxOrNull()
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(NeoSurface)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                point.timestamp.take(16).replace('T', ' '),
+                style = MaterialTheme.typography.labelSmall,
+                color = NeoOnSurfaceMuted,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "$value bpm",
+                style = DataFace.Value,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            delta?.let {
+                Text(
+                    if (it >= 0) "▲ +$it vs anterior" else "▼ $it vs anterior",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (it >= 0) Color(0xFF4CAF50) else Color(0xFFFF6B5E),
+                )
+            }
+            if (dayMin != null && dayMax != null) {
+                Text(
+                    "Día: $dayMin–$dayMax",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = NeoOnSurfaceMuted,
+                )
+            }
+        }
+    }
 }
 
 /** Insight editorial: una frase calculada con los datos reales del día. */

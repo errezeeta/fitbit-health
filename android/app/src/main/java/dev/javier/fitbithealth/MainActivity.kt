@@ -3,8 +3,11 @@ package dev.javier.fitbithealth
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.collectAsState
 import dev.javier.fitbithealth.ui.theme.LightThemeColors
 import dev.javier.fitbithealth.ui.theme.DarkThemeColors
@@ -40,20 +43,24 @@ class MainActivity : ComponentActivity() {
         initViewModels()
         setContent {
             val dark = isSystemInDarkTheme()
+            val colorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Material You dinámico: paleta del wallpaper (Android 12+)
+                if (dark) dynamicDarkColorScheme(this) else dynamicLightColorScheme(this)
+            } else {
+                if (dark) DarkThemeColors else LightThemeColors
+            }
             MaterialTheme(
-                colorScheme = if (dark) DarkThemeColors else LightThemeColors,
+                colorScheme = colorScheme,
                 typography = AppFonts,
             ) {
                 AppNavigation(
                     dashboardContent = { onMetricClick ->
-                        val hrValues = dashboardViewModel.heartRate.collectAsState().value
-                            .mapNotNull { it.value?.toFloat() }
                         DashboardScreen(
                             state = dashboardViewModel.state.collectAsState().value,
                             onRetry = { dashboardViewModel.load(java.time.LocalDate.now().toString()) },
                             onSync = { dashboardViewModel.syncNow() },
                             onMetricClick = onMetricClick,
-                            heartRateValues = hrValues,
+                            heartRatePoints = dashboardViewModel.heartRate.collectAsState().value,
                         )
                     },
                     sleepContent = {

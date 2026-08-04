@@ -39,16 +39,15 @@ import dev.javier.fitbithealth.ui.charts.InteractiveLineChart
 import dev.javier.fitbithealth.ui.metrics.HealthRange
 import dev.javier.fitbithealth.ui.metrics.MetricInfoMap
 import dev.javier.fitbithealth.ui.metrics.RangeSelector
-import dev.javier.fitbithealth.ui.theme.MetricColors
 import dev.javier.fitbithealth.ui.theme.NeoSurface
 
-private data class TrendMeta(val label: String, val color: Color, val unit: String)
+private data class TrendMeta(val label: String, val unit: String)
 
 private val TrendNames: Map<String, TrendMeta> = mapOf(
-    "rhr" to TrendMeta("Ritmo en reposo", MetricColors.HeartRate, "bpm"),
-    "hrv" to TrendMeta("HRV", MetricColors.HRV, "ms"),
-    "spo2" to TrendMeta("SpO₂", MetricColors.Spo2, "%"),
-    "steps" to TrendMeta("Pasos", MetricColors.Steps, ""),
+    "rhr" to TrendMeta("Ritmo en reposo", "bpm"),
+    "hrv" to TrendMeta("HRV", "ms"),
+    "spo2" to TrendMeta("SpO₂", "%"),
+    "steps" to TrendMeta("Pasos", ""),
 )
 
 @Composable
@@ -83,7 +82,8 @@ fun TrendsScreen(
 
 @Composable
 private fun TrendCard(metric: String, points: List<TrendPoint>) {
-    val meta = TrendNames[metric] ?: TrendMeta(metric, Color(0xFF00897B), "")
+    val meta = TrendNames[metric] ?: TrendMeta(metric, "")
+    val accent = MaterialTheme.colorScheme.primary
     val values = points.mapNotNull { it.value }.map { it.toFloat() }
     val dates = points.mapNotNull { it.date }
     val latest = points.lastOrNull()?.value
@@ -109,7 +109,7 @@ private fun TrendCard(metric: String, points: List<TrendPoint>) {
                     Text(
                         "${latest} ${meta.unit}",
                         style = MaterialTheme.typography.titleLarge,
-                        color = meta.color,
+                        color = accent,
                     )
                 }
             }
@@ -117,7 +117,7 @@ private fun TrendCard(metric: String, points: List<TrendPoint>) {
             if (values.size >= 2) {
                 InteractiveLineChart(
                     values = values,
-                    color = meta.color,
+                    color = accent,
                     modifier = Modifier.fillMaxWidth().height(160.dp),
                     onValueSelected = { index, value ->
                         selectedValue = if (index < dates.size) {
