@@ -198,10 +198,16 @@ fun SettingsScreen(
                                 onClick = {
                                     updateState = UpdateUiState.Downloading(s.info)
                                     scope.launch {
-                                        val result = up.downloadAndInstall(s.info)
+                                        val result = up.downloadAndInstall(s.info) { downloaded, total ->
+                                            updateState = UpdateUiState.Downloading(s.info, downloaded, total)
+                                        }
                                         result.onSuccess { apk ->
-                                            up.promptInstall(apk)
-                                            updateState = UpdateUiState.Idle
+                                            if (up.canInstallUnknownApps()) {
+                                                up.promptInstall(apk)
+                                                updateState = UpdateUiState.Idle
+                                            } else {
+                                                updateState = UpdateUiState.NeedPermission(s.info)
+                                            }
                                         }.onFailure {
                                             updateState = UpdateUiState.Error("Descarga fallida: ${it.message}")
                                         }
@@ -215,10 +221,42 @@ fun SettingsScreen(
                                 Text("Descargar e instalar v${s.info.latestVersion}")
                             }
                         }
-                        is UpdateUiState.Downloading -> Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.size(10.dp))
-                            Text("Descargando v${s.info.latestVersion}...", style = MaterialTheme.typography.bodyMedium)
+                        is UpdateUiState.Downloading -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    progress = {
+                                        val total = s.totalBytes.coerceAtLeast(1L)
+                                        (s.downloadedBytes.toFloat() / total).coerceIn(0f, 1f)
+                                    },
+                                )
+                                Spacer(Modifier.size(10.dp))
+                                Text(
+                                    "Descargando v${s.info.latestVersion}… ${s.downloadedBytes / 1024 / 1024} MB",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                        is UpdateUiState.NeedPermission -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            StatusRow(MaterialTheme.colorScheme.primary, "APK descargado ✓")
+                            Text(
+                                "Habilita «Instalar apps desconocidas» para Fitbit Health y vuelve a pulsar instalar.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Button(
+                                onClick = {
+                                    up.requestInstallPermission()
+                                    updateState = UpdateUiState.Available(s.info)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Icon(Icons.Default.SystemUpdate, contentDescription = null)
+                                Spacer(Modifier.size(8.dp))
+                                Text("Abrir permisos de instalación")
+                            }
                         }
                         is UpdateUiState.Error -> StatusRow(Color(0xFFB3261E), s.message)
                     }
@@ -232,7 +270,12 @@ private sealed interface UpdateUiState {
     data object Idle : UpdateUiState
     data object Checking : UpdateUiState
     data class Available(val info: AppUpdater.UpdateInfo) : UpdateUiState
-    data class Downloading(val info: AppUpdater.UpdateInfo) : UpdateUiState
+    data class Downloading(
+        val info: AppUpdater.UpdateInfo,
+        val downloadedBytes: Long = 0,
+        val totalBytes: Long = 0,
+    ) : UpdateUiState
+    data class NeedPermission(val info: AppUpdater.UpdateInfo) : UpdateUiState
     data class UpToDate(val version: String) : UpdateUiState
     data class Error(val message: String) : UpdateUiState
 }

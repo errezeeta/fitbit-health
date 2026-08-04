@@ -31,14 +31,14 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Interactive line chart with neon glow, gradient area and touch inspection.
+ * Interactive line chart — limpio, estilo Apple Health.
+ * Sin glow, sin gradientes llamativos: línea fina, área muy sutil, crosshair.
  */
 @Composable
 fun InteractiveLineChart(
     values: List<Float>,
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFF4C8DFF),
-    glow: Color = color,
+    color: Color = Color(0xFF2F6BFF),
     onValueSelected: (Int, Float) -> Unit = { _, _ -> },
     onSelectionCleared: () -> Unit = {},
 ) {
@@ -87,73 +87,31 @@ fun InteractiveLineChart(
             Offset(index * step, size.height - ((value - min) / span * (size.height - 24f)) - 8f)
         }
 
-        // Grid sutil
-        val gridColor = Color.White.copy(alpha = 0.04f)
+        // Grid sutil (1 línea cada cuarto)
+        val gridColor = Color.White.copy(alpha = 0.05f)
         for (i in 1..3) {
             val y = size.height * i / 4f
             drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
         }
 
-        // Área con gradiente vertical
-        val areaPath = Path().apply {
-            moveTo(points.first().x, size.height)
-            points.forEach { lineTo(it.x, it.y) }
-            lineTo(points.last().x, size.height)
-            close()
-        }
-        drawPath(
-            path = areaPath,
-            brush = Brush.verticalGradient(
-                colors = listOf(color.copy(alpha = 0.30f), color.copy(alpha = 0.0f)),
-                startY = 0f,
-                endY = size.height,
-            ),
-        )
-
-        // Glow bajo la línea
+        // Línea principal fina
         points.zipWithNext().forEach { (start, end) ->
-            drawLine(
-                color = glow.copy(alpha = 0.35f),
-                start = start,
-                end = end,
-                strokeWidth = 10f,
-                cap = StrokeCap.Round,
-            )
+            drawLine(color = color, start = start, end = end, strokeWidth = 2f, cap = StrokeCap.Round)
         }
 
-        // Línea principal con gradiente horizontal
-        val lineBrush = Brush.horizontalGradient(
-            colors = listOf(color.copy(alpha = 0.6f), color),
-        )
-        points.zipWithNext().forEachIndexed { i, (start, end) ->
-            if (i == 0) {
-                drawLine(color = color, start = start, end = end, strokeWidth = 4f, cap = StrokeCap.Round)
-            } else {
-                drawLine(
-                    brush = lineBrush,
-                    start = start,
-                    end = end,
-                    strokeWidth = 4f,
-                    cap = StrokeCap.Round,
-                )
-            }
-        }
-
-        // Punto seleccionado con crosshair
+        // Selección: crosshair vertical + punto
         if (selectedIndex in points.indices) {
             val p = points[selectedIndex]
             drawLine(
-                color = color.copy(alpha = 0.3f),
+                color = Color.White.copy(alpha = 0.25f),
                 start = Offset(p.x, 0f),
                 end = Offset(p.x, size.height),
-                strokeWidth = 1.5f,
+                strokeWidth = 1f,
             )
-            drawCircle(color = color.copy(alpha = 0.25f), radius = 16f, center = p)
-            drawCircle(color = Color.White, radius = 8f, center = p)
-            drawCircle(color = color, radius = 6f, center = p)
+            drawCircle(color = color, radius = 7f, center = p)
+            drawCircle(color = Color.White, radius = 3.5f, center = p)
         } else {
-            drawCircle(color = Color.White, radius = 6f, center = points.last())
-            drawCircle(color = color, radius = 4.5f, center = points.last())
+            drawCircle(color = color, radius = 3.5f, center = points.last())
         }
     }
 }
@@ -164,8 +122,6 @@ fun DonutChart(
     segments: List<Pair<Float, Color>>,
     modifier: Modifier = Modifier,
     strokeWidth: Float = 22f,
-    centerLabel: String = "",
-    centerSub: String = "",
 ) {
     val progress by animateFloatAsState(
         targetValue = 1f,
@@ -207,29 +163,6 @@ fun DonutChart(
             size = Size(diameter, diameter),
             style = Stroke(width = strokeWidth - 4f),
         )
-
-        // Etiqueta central
-        if (centerLabel.isNotEmpty()) {
-            val labelPaint = android.graphics.Paint().apply {
-                isAntiAlias = true
-                textAlign = android.graphics.Paint.Align.CENTER
-                color = android.graphics.Color.WHITE
-                textSize = 32f
-                typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-            }
-            val subPaint = android.graphics.Paint().apply {
-                isAntiAlias = true
-                textAlign = android.graphics.Paint.Align.CENTER
-                color = android.graphics.Color.argb(150, 255, 255, 255)
-                textSize = 14f
-            }
-            drawContext.canvas.nativeCanvas.apply {
-                drawText(centerLabel, center.x, center.y + 6f, labelPaint)
-                if (centerSub.isNotEmpty()) {
-                    drawText(centerSub, center.x, center.y + 30f, subPaint)
-                }
-            }
-        }
     }
 }
 

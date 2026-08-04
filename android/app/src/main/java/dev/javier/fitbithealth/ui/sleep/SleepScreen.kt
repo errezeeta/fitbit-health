@@ -34,10 +34,10 @@ import dev.javier.fitbithealth.ui.theme.MetricColors
 import dev.javier.fitbithealth.ui.theme.NeoBackground
 import dev.javier.fitbithealth.ui.theme.NeoSurface
 
-private val DeepColor = Color(0xFF8B5CF6)
-private val LightColor = Color(0xFF4C8DFF)
-private val RemColor = Color(0xFFFF4FA3)
-private val AwakeColor = Color(0xFF5A6478)
+private val DeepColor = Color(0xFF8E8E93)   // gris Apple
+private val LightColor = Color(0xFFB0B0B5)  // gris claro
+private val RemColor = Color(0xFF2F6BFF)    // único acento
+private val AwakeColor = Color(0xFF4A4A4F)  // gris oscuro
 
 @Composable
 fun SleepScreen(state: SleepState, modifier: Modifier = Modifier) {
@@ -95,19 +95,34 @@ private fun SleepDetailCard(session: SleepSession) {
                 )
             }
 
-            // Donut con fases
-            DonutChart(
-                segments = listOf(
-                    deep to DeepColor,
-                    light to LightColor,
-                    rem to RemColor,
-                    awake to AwakeColor,
-                ),
+            // Donut con fases (etiqueta central en Compose, no Paint)
+            Box(
                 modifier = Modifier.fillMaxWidth().height(200.dp),
-                strokeWidth = 24f,
-                centerLabel = "${asleep / 60}h ${asleep % 60}m",
-                centerSub = "de sueño",
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                DonutChart(
+                    segments = listOf(
+                        deep to DeepColor,
+                        light to LightColor,
+                        rem to RemColor,
+                        awake to AwakeColor,
+                    ),
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 26f,
+                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "${asleep / 60}h ${asleep % 60}m",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        "de sueño",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             // Leyenda en 2x2
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {

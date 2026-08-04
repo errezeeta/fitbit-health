@@ -9,50 +9,39 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// ── Paleta "Neo" — inspirada en Revolut / fintech premium ─────────
-// Fondo casi negro azulado + acentos eléctricos vibrantes.
+// ── Tema "Pulse" — instrumento de salud, no app de marketing ──
+// Sujeto: un dispositivo de precisión. Un acento (ámbar), negro profundo,
+// cifras tabulares. Cada decisión viene del mundo del dato biométrico.
 
-// Fondos
-val NeoBackground = Color(0xFF0B0F19)     // navy casi negro
-val NeoSurface = Color(0xFF131A28)        // tarjetas
-val NeoSurfaceVariant = Color(0xFF1B2436) // superficies elevadas
-val NeoSurfaceHigh = Color(0xFF232E45)    // elevación alta
-val NeoOnBackground = Color(0xFFF2F5FA)
-val NeoOnSurfaceMuted = Color(0xFF8B96AB) // texto secundario
-val NeoOutline = Color(0xFF2A3549)
+val NeoBackground = Color(0xFF0B0B0D)      // negro profundo
+val NeoSurface = Color(0xFF131316)         // tarjetas, +1 paso
+val NeoSurfaceVariant = Color(0xFF1B1B20)  // superficies elevadas
+val NeoSurfaceHigh = Color(0xFF24242B)
+val NeoOnBackground = Color(0xFFF4F2EE)    // blanco cálido (no puro)
+val NeoOnSurfaceMuted = Color(0xFF8A888F)  // gris instrumento
+val NeoOutline = Color(0xFF232327)         // hairline dividers
 
-// Acentos eléctricos
-val NeoElectricBlue = Color(0xFF4C8DFF)
-val NeoElectricBlueDark = Color(0xFF3D7BE8)
-val NeoMint = Color(0xFF00D68F)
-val NeoMintDark = Color(0xFF00B87A)
-val NeoCoral = Color(0xFFFF5D5D)
-val NeoCoralDark = Color(0xFFE84848)
-val NeoPink = Color(0xFFFF4FA3)
-val NeoAmber = Color(0xFFFFB020)
-val NeoPurple = Color(0xFF8B5CF6)
-val NeoCyan = Color(0xFF00B8FF)
+// ÚNICO acento: ámbar dorado (el latido). Nada más de color.
+val Accent = Color(0xFFD9A962)
+val AccentDim = Color(0xFFB98A3E)
+val AccentSoft = Color(0xFF2A2418)         // fondo de selección
 
-// Claro (menos usado; la app brilla en oscuro)
-val NeoLightBackground = Color(0xFFF5F7FB)
+val Danger = Color(0xFFFF6B5E)             // solo para errores
+
+// Luz (mínimo)
+val NeoLightBackground = Color(0xFFF5F4F1)
 val NeoLightSurface = Color(0xFFFFFFFF)
-val NeoLightSurfaceVariant = Color(0xFFE9EDF4)
-val NeoLightOnBackground = Color(0xFF0F1420)
-val NeoLightOutline = Color(0xFFD8DEE8)
+val NeoLightSurfaceVariant = Color(0xFFE9E7E2)
+val NeoLightOnBackground = Color(0xFF1C1B19)
+val NeoLightOutline = Color(0xFFD8D5CE)
 
 private val DarkColors = darkColorScheme(
-    primary = NeoElectricBlue,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFF1E3A6E),
-    onPrimaryContainer = Color(0xFFD6E4FF),
-    secondary = NeoMint,
-    onSecondary = Color(0xFF003B26),
-    secondaryContainer = Color(0xFF0A4A34),
-    onSecondaryContainer = Color(0xFFB8F5DC),
-    tertiary = NeoPurple,
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFF3B2A6B),
-    onTertiaryContainer = Color(0xFFE4D8FF),
+    primary = Accent,
+    onPrimary = Color(0xFF1C1508),
+    primaryContainer = AccentSoft,
+    onPrimaryContainer = Color(0xFFEAD9B0),
+    secondary = NeoOnBackground,
+    onSecondary = Color(0xFF1C1B19),
     background = NeoBackground,
     onBackground = NeoOnBackground,
     surface = NeoSurface,
@@ -60,65 +49,55 @@ private val DarkColors = darkColorScheme(
     surfaceVariant = NeoSurfaceVariant,
     onSurfaceVariant = NeoOnSurfaceMuted,
     outline = NeoOutline,
-    error = NeoCoral,
+    error = Danger,
     onError = Color.White,
-    errorContainer = Color(0xFF5C1F28),
-    onErrorContainer = Color(0xFFFFDAD6),
 )
 
 private val LightColors = lightColorScheme(
-    primary = NeoElectricBlueDark,
+    primary = AccentDim,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD6E4FF),
-    onPrimaryContainer = Color(0xFF10305E),
-    secondary = NeoMintDark,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFB8F5DC),
-    onSecondaryContainer = Color(0xFF003B26),
-    tertiary = NeoPurple,
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFE4D8FF),
-    onTertiaryContainer = Color(0xFF2A1A55),
+    primaryContainer = Color(0xFFF0E4C8),
+    onPrimaryContainer = Color(0xFF3A2F14),
     background = NeoLightBackground,
     onBackground = NeoLightOnBackground,
     surface = NeoLightSurface,
     onSurface = NeoLightOnBackground,
     surfaceVariant = NeoLightSurfaceVariant,
-    onSurfaceVariant = Color(0xFF5A6478),
+    onSurfaceVariant = Color(0xFF6E6B63),
     outline = NeoLightOutline,
-    error = NeoCoralDark,
+    error = Danger,
     onError = Color.White,
 )
 
-// ── Tipografía: sans geométrica, números grandes y bold ─────────
+// Tipografía: cifras tabulares para datos — el número nunca baila.
 private val AppTypography = Typography(
-    displayLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 48.sp, lineHeight = 52.sp, letterSpacing = (-1.2).sp),
-    displayMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.ExtraBold, fontSize = 40.sp, lineHeight = 44.sp, letterSpacing = (-1).sp),
-    displaySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 40.sp, letterSpacing = (-0.8).sp),
-    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.5).sp),
-    headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 30.sp, letterSpacing = (-0.3).sp),
-    headlineSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
-    titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp),
-    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
-    titleSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
-    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
-    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
-    bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp),
-    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
-    labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 0.6.sp),
+    displayLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Light, fontSize = 64.sp, lineHeight = 64.sp, letterSpacing = (-2).sp, fontFeatureSettings = "tnum"),
+    displayMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Light, fontSize = 48.sp, lineHeight = 52.sp, letterSpacing = (-1.5).sp, fontFeatureSettings = "tnum"),
+    displaySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 40.sp, letterSpacing = (-0.8).sp, fontFeatureSettings = "tnum"),
+    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 26.sp, lineHeight = 32.sp, letterSpacing = (-0.4).sp),
+    headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 21.sp, lineHeight = 27.sp, letterSpacing = (-0.3).sp),
+    headlineSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 17.sp, lineHeight = 23.sp),
+    titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 21.sp),
+    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 19.sp),
+    titleSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 13.sp, lineHeight = 17.sp),
+    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 21.sp),
+    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp),
+    bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 11.sp, lineHeight = 15.sp),
+    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.3.sp),
+    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 0.5.sp),
+    labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 10.sp, lineHeight = 12.sp, letterSpacing = 1.2.sp),
 )
 
 val LightThemeColors = LightColors
 val DarkThemeColors = DarkColors
 val AppFonts = AppTypography
 
-// Acentos por métrica — coherentes en light/dark
+// Casi todo neutro; el ámbar solo donde el dato importa.
 object MetricColors {
-    val Sleep = NeoPurple
-    val HeartRate = NeoCoral
-    val HRV = NeoMint
-    val Spo2 = NeoCyan
-    val Steps = NeoAmber
-    val Breathing = NeoPink
+    val HeartRate = Accent
+    val Sleep = Color(0xFF9A988F)
+    val HRV = Color(0xFFC9B98A)
+    val Spo2 = Color(0xFF9A988F)
+    val Steps = Color(0xFF9A988F)
+    val Breathing = Color(0xFF9A988F)
 }
