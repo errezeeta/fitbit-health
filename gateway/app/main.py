@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+import subprocess
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 
@@ -72,13 +73,30 @@ def create_app(*, database_path: str, gateway_token: str) -> FastAPI:
     def chat(payload: dict, _: bool = Depends(auth)):
         try:
             message = chat_service.validate_message(payload.get("message", ""))
-            context = payload.get("context", {})
+            context = dict(payload.get("context") or {})
+            if not context:
+                # Contexto automático: último día con datos + tendencias
+                context = build_health_context()
             prompt = chat_service.build_prompt(message, context)
+            answer = chat_service.ask_hermes(prompt)
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
-        return chat_service.format_response(
-            "Chat adapter ready for Hermes health integration.",
-            ["fitbit-context"],
-        ) | {"prompt_preview": prompt[:500]}
+        except (TimeoutError, subprocess.TimeoutExpired) as error:
+            raise HTTPException(status_code=504, detail="El chat ha superado el tiempo límite; inténtalo de nuevo.") from error
+        except RuntimeError as error:
+            raise HTTPException(status_code=502, detail=f"No se pudo contactar con Hermes: {error}") from error
+        return chat_service.format_response(answer, ["fitbit-context"])
+
+    def build_health_context() -> dict[str, Any]:
+        today = date.today().isoformat()
+        dashboard = repository.dashboard(today)
+        trends = {
+            metric: repository.metric_series(metric, today, today)
+            for metric in ("rhr", "hrv", "spo2")
+        }
+        return {
+            "dashboard": dashboard,
+            "trends_recent": trends,
+        }
 
     return app
