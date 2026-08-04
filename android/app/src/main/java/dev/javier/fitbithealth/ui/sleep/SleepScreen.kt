@@ -1,6 +1,8 @@
 package dev.javier.fitbithealth.ui.sleep
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,16 +24,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.javier.fitbithealth.data.api.SleepSession
+import dev.javier.fitbithealth.ui.charts.DonutChart
 import dev.javier.fitbithealth.ui.charts.HealthStackedBar
 import dev.javier.fitbithealth.ui.charts.LegendDot
 import dev.javier.fitbithealth.ui.theme.MetricColors
+import dev.javier.fitbithealth.ui.theme.NeoBackground
+import dev.javier.fitbithealth.ui.theme.NeoSurface
 
-private val DeepColor = Color(0xFF4A148C)
-private val LightColor = Color(0xFF7E57C2)
-private val RemColor = Color(0xFFAB47BC)
-private val AwakeColor = Color(0xFFBDBDBD)
+private val DeepColor = Color(0xFF8B5CF6)
+private val LightColor = Color(0xFF4C8DFF)
+private val RemColor = Color(0xFFFF4FA3)
+private val AwakeColor = Color(0xFF5A6478)
 
 @Composable
 fun SleepScreen(state: SleepState, modifier: Modifier = Modifier) {
@@ -73,11 +81,11 @@ private fun SleepDetailCard(session: SleepSession) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = NeoSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Anoche", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 Text(
@@ -87,23 +95,28 @@ private fun SleepDetailCard(session: SleepSession) {
                 )
             }
 
-            // Fases
-            HealthStackedBar(
+            // Donut con fases
+            DonutChart(
                 segments = listOf(
                     deep to DeepColor,
                     light to LightColor,
                     rem to RemColor,
                     awake to AwakeColor,
                 ),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(200.dp),
+                strokeWidth = 24f,
+                centerLabel = "${asleep / 60}h ${asleep % 60}m",
+                centerSub = "de sueño",
             )
 
-            // Leyenda
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxWidth()) {
-                StageLegend(DeepColor, "Profundo", deep.toInt())
-                StageLegend(LightColor, "Ligero", light.toInt())
-                StageLegend(RemColor, "REM", rem.toInt())
-                StageLegend(AwakeColor, "Despierto", awake.toInt())
+            // Leyenda en 2x2
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
+                StageLegend(DeepColor, "Profundo", deep.toInt(), Modifier.weight(1f))
+                StageLegend(LightColor, "Ligero", light.toInt(), Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
+                StageLegend(RemColor, "REM", rem.toInt(), Modifier.weight(1f))
+                StageLegend(AwakeColor, "Despierto", awake.toInt(), Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(4.dp))
@@ -126,13 +139,13 @@ private fun SleepDetailCard(session: SleepSession) {
 }
 
 @Composable
-private fun StageLegend(color: Color, label: String, minutes: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun StageLegend(color: Color, label: String, minutes: Int, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         LegendDot(color)
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(6.dp))
         Column {
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("$minutes min", style = MaterialTheme.typography.labelMedium)
+            Text("$minutes min", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -142,9 +155,9 @@ private fun SleepSummaryCard(session: SleepSession) {
     val asleep = session.minutesAsleep ?: 0
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = NeoSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {

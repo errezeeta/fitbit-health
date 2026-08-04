@@ -21,20 +21,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /**
- * Interactive line chart: touch / drag to inspect values at each point.
- * Exposes [onValueSelected] with (index, value) and [onSelectionCleared].
+ * Interactive line chart with neon glow, gradient area and touch inspection.
  */
 @Composable
 fun InteractiveLineChart(
     values: List<Float>,
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFF00897B),
+    color: Color = Color(0xFF4C8DFF),
+    glow: Color = color,
     onValueSelected: (Int, Float) -> Unit = { _, _ -> },
     onSelectionCleared: () -> Unit = {},
 ) {
@@ -83,14 +87,14 @@ fun InteractiveLineChart(
             Offset(index * step, size.height - ((value - min) / span * (size.height - 24f)) - 8f)
         }
 
-        // Grid lines (subtle)
-        val gridColor = color.copy(alpha = 0.08f)
+        // Grid sutil
+        val gridColor = Color.White.copy(alpha = 0.04f)
         for (i in 1..3) {
             val y = size.height * i / 4f
             drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
         }
 
-        // Area fill
+        // Área con gradiente vertical
         val areaPath = Path().apply {
             moveTo(points.first().x, size.height)
             points.forEach { lineTo(it.x, it.y) }
@@ -100,37 +104,136 @@ fun InteractiveLineChart(
         drawPath(
             path = areaPath,
             brush = Brush.verticalGradient(
-                colors = listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0.02f)),
+                colors = listOf(color.copy(alpha = 0.30f), color.copy(alpha = 0.0f)),
                 startY = 0f,
                 endY = size.height,
             ),
         )
 
-        // Line
+        // Glow bajo la línea
         points.zipWithNext().forEach { (start, end) ->
-            drawLine(color = color, start = start, end = end, strokeWidth = 4f, cap = StrokeCap.Round)
+            drawLine(
+                color = glow.copy(alpha = 0.35f),
+                start = start,
+                end = end,
+                strokeWidth = 10f,
+                cap = StrokeCap.Round,
+            )
         }
 
-        // Selected point: crosshair + dot
+        // Línea principal con gradiente horizontal
+        val lineBrush = Brush.horizontalGradient(
+            colors = listOf(color.copy(alpha = 0.6f), color),
+        )
+        points.zipWithNext().forEachIndexed { i, (start, end) ->
+            if (i == 0) {
+                drawLine(color = color, start = start, end = end, strokeWidth = 4f, cap = StrokeCap.Round)
+            } else {
+                drawLine(
+                    brush = lineBrush,
+                    start = start,
+                    end = end,
+                    strokeWidth = 4f,
+                    cap = StrokeCap.Round,
+                )
+            }
+        }
+
+        // Punto seleccionado con crosshair
         if (selectedIndex in points.indices) {
             val p = points[selectedIndex]
             drawLine(
-                color = color.copy(alpha = 0.35f),
+                color = color.copy(alpha = 0.3f),
                 start = Offset(p.x, 0f),
                 end = Offset(p.x, size.height),
                 strokeWidth = 1.5f,
             )
+            drawCircle(color = color.copy(alpha = 0.25f), radius = 16f, center = p)
             drawCircle(color = Color.White, radius = 8f, center = p)
             drawCircle(color = color, radius = 6f, center = p)
-            drawCircle(color = Color.White, radius = 2.5f, center = p)
         } else {
             drawCircle(color = Color.White, radius = 6f, center = points.last())
-            drawCircle(color = color, radius = 4f, center = points.last())
+            drawCircle(color = color, radius = 4.5f, center = points.last())
         }
     }
 }
 
-/** Segmented horizontal bar used for sleep stage composition. */
+/** Donut chart con gap entre segmentos — para fases de sueño. */
+@Composable
+fun DonutChart(
+    segments: List<Pair<Float, Color>>,
+    modifier: Modifier = Modifier,
+    strokeWidth: Float = 22f,
+    centerLabel: String = "",
+    centerSub: String = "",
+) {
+    val progress by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(durationMillis = 900),
+        label = "donutReveal",
+    )
+    Canvas(modifier) {
+        val total = segments.sumOf { it.first.toDouble() }.toFloat().coerceAtLeast(1f)
+        val diameter = size.minDimension - strokeWidth
+        val radius = diameter / 2f
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val gap = 0.06f // fracción del arco como separación
+
+        var startAngle = -90f
+        segments.forEach { (value, color) ->
+            val sweep = (value / total) * 360f * progress
+            val gapSweep = if (segments.size > 1) gap * (360f / segments.size) else 0f
+            if (sweep > gapSweep) {
+                drawArc(
+                    color = color,
+                    startAngle = startAngle + gapSweep / 2f,
+                    sweepAngle = (sweep - gapSweep).coerceAtLeast(0.5f),
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = Size(diameter, diameter),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                )
+            }
+            startAngle += sweep
+        }
+
+        // Track de fondo
+        drawArc(
+            color = Color.White.copy(alpha = 0.06f),
+            startAngle = 0f,
+            sweepAngle = 360f,
+            useCenter = false,
+            topLeft = Offset(center.x - radius, center.y - radius),
+            size = Size(diameter, diameter),
+            style = Stroke(width = strokeWidth - 4f),
+        )
+
+        // Etiqueta central
+        if (centerLabel.isNotEmpty()) {
+            val labelPaint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                textAlign = android.graphics.Paint.Align.CENTER
+                color = android.graphics.Color.WHITE
+                textSize = 32f
+                typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            }
+            val subPaint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                textAlign = android.graphics.Paint.Align.CENTER
+                color = android.graphics.Color.argb(150, 255, 255, 255)
+                textSize = 14f
+            }
+            drawContext.canvas.nativeCanvas.apply {
+                drawText(centerLabel, center.x, center.y + 6f, labelPaint)
+                if (centerSub.isNotEmpty()) {
+                    drawText(centerSub, center.x, center.y + 30f, subPaint)
+                }
+            }
+        }
+    }
+}
+
+/** Segmented horizontal bar — composición de fases. */
 @Composable
 fun HealthStackedBar(
     segments: List<Pair<Float, Color>>,

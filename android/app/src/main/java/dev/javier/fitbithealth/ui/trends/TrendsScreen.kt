@@ -40,6 +40,7 @@ import dev.javier.fitbithealth.ui.metrics.HealthRange
 import dev.javier.fitbithealth.ui.metrics.MetricInfoMap
 import dev.javier.fitbithealth.ui.metrics.RangeSelector
 import dev.javier.fitbithealth.ui.theme.MetricColors
+import dev.javier.fitbithealth.ui.theme.NeoSurface
 
 private data class TrendMeta(val label: String, val color: Color, val unit: String)
 
@@ -91,9 +92,9 @@ private fun TrendCard(metric: String, points: List<TrendPoint>) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = NeoSurface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

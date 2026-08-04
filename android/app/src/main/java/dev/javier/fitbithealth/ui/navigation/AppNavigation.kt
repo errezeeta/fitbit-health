@@ -18,12 +18,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import dev.javier.fitbithealth.ui.theme.NeoSurface
 import kotlinx.serialization.Serializable
 
 @Serializable data object DashboardRoute
@@ -55,9 +57,11 @@ fun AppNavigation(
     val entry by navController.currentBackStackEntryAsState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = NeoSurface,
+                tonalElevation = 0.dp,
             ) {
                 items.forEach { item ->
                     NavigationBarItem(
@@ -73,7 +77,9 @@ fun AppNavigation(
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
-                            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                     )
                 }
