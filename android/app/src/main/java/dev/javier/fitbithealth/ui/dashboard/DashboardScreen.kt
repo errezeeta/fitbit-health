@@ -90,16 +90,6 @@ fun DashboardScreen(
 private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit, onMetricClick: (String) -> Unit) {
     val dashboard = state.dashboard
     val cards = buildList {
-        dashboard.sleep?.let {
-            add(MetricCardData(
-                "sleep",
-                "Sueño",
-                "${(it.minutesAsleep ?: 0) / 60}h ${(it.minutesAsleep ?: 0) % 60}m",
-                "anoche",
-                MetricColors.Sleep,
-                Icons.Default.Bedtime,
-            ))
-        }
         dashboard.restingHeartRate?.let {
             add(MetricCardData("rhr", "Ritmo en reposo", "$it", "bpm", MetricColors.HeartRate, Icons.Default.Favorite))
         }
@@ -112,15 +102,24 @@ private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit, on
         dashboard.steps?.let {
             add(MetricCardData("steps", "Pasos", it.toString(), "hoy", MetricColors.Steps, Icons.Default.Timeline))
         }
+        dashboard.sleep?.let {
+            add(MetricCardData(
+                "sleep",
+                "Sueño",
+                "${(it.minutesAsleep ?: 0) / 60}h ${(it.minutesAsleep ?: 0) % 60}m",
+                "anoche",
+                MetricColors.Sleep,
+                Icons.Default.Bedtime,
+            ))
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f)) {
-                Text("Resumen", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 Text(
-                    dashboard.date?.let { "Salud · ${it}" } ?: "Tu salud de hoy",
+                    dashboard.date?.let { "Salud · $it" } ?: "Tu salud de hoy",
                     style = MaterialTheme.typography.headlineMedium,
                 )
             }
@@ -136,12 +135,8 @@ private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit, on
 
         Spacer(Modifier.height(20.dp))
 
-        // Hero card
-        HeroCard(
-            title = "Tu salud hoy",
-            subtitle = if (dashboard.sleep != null) "Descanso de ${(dashboard.sleep.minutesAsleep ?: 0) / 60}h ${(dashboard.sleep.minutesAsleep ?: 0) % 60}m · ${dashboard.restingHeartRate ?: "—"} bpm en reposo" else "Datos al día",
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Hero de rendimiento — no una card de marketing: datos clave con escala propia
+        PerformanceHero(dashboard = dashboard, onSync = onSync)
 
         Spacer(Modifier.height(16.dp))
 
@@ -163,29 +158,50 @@ private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit, on
     }
 }
 
+/** Composición monitor: ritmo en reposo grande + SpO₂ y HRV como contexto, sin decoración falsa. */
 @Composable
-private fun HeroCard(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    val primary = MaterialTheme.colorScheme.primary
+private fun PerformanceHero(
+    dashboard: dev.javier.fitbithealth.data.api.DashboardResponse,
+    onSync: () -> Unit,
+) {
+    val rhr = dashboard.restingHeartRate
+    val hrv = dashboard.hrv
+    val spo2 = dashboard.spo2
+
     Card(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Box(
-            Modifier
-                .background(
-                    Brush.linearGradient(
-                        listOf(primary.copy(alpha = 0.95f), primary.copy(alpha = 0.65f)),
-                    )
-                )
-                .padding(20.dp),
-        ) {
-            Column {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                Spacer(Modifier.height(4.dp))
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.85f))
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.weight(1f)) {
+                    Text("Ritmo en reposo", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            rhr?.toString() ?: "—",
+                            style = MaterialTheme.typography.displaySmall,
+                            color = MetricColors.HeartRate,
+                        )
+                        Spacer(Modifier.size(6.dp))
+                        Text("bpm", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 6.dp))
+                    }
+                }
+                Spacer(Modifier.weight(0.3f))
+                MiniStat("HRV", hrv?.let { "${it.toInt()} ms" } ?: "—", MetricColors.HRV)
+                Spacer(Modifier.weight(0.3f))
+                MiniStat("SpO₂", spo2?.let { "$it%" } ?: "—", MetricColors.Spo2)
             }
         }
+    }
+}
+
+@Composable
+private fun MiniStat(label: String, value: String, color: Color) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.SemiBold)
     }
 }
 

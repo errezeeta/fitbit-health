@@ -23,6 +23,7 @@ import dev.javier.fitbithealth.ui.trends.TrendsViewModel
 import dev.javier.fitbithealth.ui.metricdetail.MetricDetailScreen
 import dev.javier.fitbithealth.ui.metrics.HealthRange
 import dev.javier.fitbithealth.data.api.HealthApiFactory
+import dev.javier.fitbithealth.data.updater.AppUpdater
 
 class MainActivity : ComponentActivity() {
     private lateinit var container: AppContainer
@@ -30,10 +31,12 @@ class MainActivity : ComponentActivity() {
     private lateinit var sleepViewModel: SleepViewModel
     private lateinit var chatViewModel: HealthChatViewModel
     private lateinit var trendsViewModel: TrendsViewModel
+    private lateinit var updater: AppUpdater
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         container = AppContainer(applicationContext)
+        updater = AppUpdater(applicationContext)
         initViewModels()
         setContent {
             val dark = isSystemInDarkTheme()
@@ -73,6 +76,7 @@ class MainActivity : ComponentActivity() {
                         SettingsScreen(
                             initialUrl = settings.gatewayUrl,
                             initialToken = settings.gatewayToken,
+                            updater = updater,
                             onSave = { url, token ->
                                 settings.gatewayUrl = url
                                 settings.gatewayToken = token

@@ -16,8 +16,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import dev.javier.fitbithealth.data.updater.AppUpdater
 import kotlinx.coroutines.launch
 
 @Composable
@@ -46,11 +51,13 @@ fun SettingsScreen(
     initialToken: String,
     onSave: (String, String) -> Unit,
     onTestConnection: suspend (String, String) -> Boolean,
+    updater: AppUpdater? = null,
     modifier: Modifier = Modifier,
 ) {
     var url by remember { mutableStateOf(initialUrl) }
     var token by remember { mutableStateOf(initialToken) }
     var status by remember { mutableStateOf<ConnectionStatus?>(null) }
+    var updateState by remember { mutableStateOf<UpdateUiState>(UpdateUiState.Idle) }
     val scope = rememberCoroutineScope()
 
     Column(
@@ -136,7 +143,98 @@ fun SettingsScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        // ── Actualización de la app ─────────────────────────────
+        Spacer(Modifier.height(8.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.SystemUpdate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.size(10.dp))
+                    Text("Actualización de la app", style = MaterialTheme.typography.titleMedium)
+                }
+                updater?.let { up ->
+                    when (val s = updateState) {
+                        is UpdateUiState.Idle -> Button(
+                            onClick = {
+                                updateState = UpdateUiState.Checking
+                                scope.launch {
+                                    val info = up.checkForUpdate()
+                                    updateState = if (info == null) {
+                                        UpdateUiState.Error("No se pudo comprobar actualizaciones")
+                                    } else if (info.isUpdateAvailable) {
+                                        UpdateUiState.Available(info)
+                                    } else {
+                                        UpdateUiState.UpToDate(info.latestVersion)
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Icon(Icons.Default.SystemUpdate, contentDescription = null)
+                            Spacer(Modifier.size(8.dp))
+                            Text("Buscar actualizaciones")
+                        }
+                        is UpdateUiState.Checking -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.size(10.dp))
+                            Text("Comprobando...", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        is UpdateUiState.UpToDate -> StatusRow(Color(0xFF2E7D32), "Tienes la última versión (v${s.version})")
+                        is UpdateUiState.Available -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            StatusRow(MaterialTheme.colorScheme.primary, "Nueva versión disponible: v${s.info.latestVersion}")
+                            Text(
+                                "Actual: v${s.info.currentVersion}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Button(
+                                onClick = {
+                                    updateState = UpdateUiState.Downloading(s.info)
+                                    scope.launch {
+                                        val result = up.downloadAndInstall(s.info)
+                                        result.onSuccess { apk ->
+                                            up.promptInstall(apk)
+                                            updateState = UpdateUiState.Idle
+                                        }.onFailure {
+                                            updateState = UpdateUiState.Error("Descarga fallida: ${it.message}")
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null)
+                                Spacer(Modifier.size(8.dp))
+                                Text("Descargar e instalar v${s.info.latestVersion}")
+                            }
+                        }
+                        is UpdateUiState.Downloading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.size(10.dp))
+                            Text("Descargando v${s.info.latestVersion}...", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        is UpdateUiState.Error -> StatusRow(Color(0xFFB3261E), s.message)
+                    }
+                }
+            }
+        }
     }
+}
+
+private sealed interface UpdateUiState {
+    data object Idle : UpdateUiState
+    data object Checking : UpdateUiState
+    data class Available(val info: AppUpdater.UpdateInfo) : UpdateUiState
+    data class Downloading(val info: AppUpdater.UpdateInfo) : UpdateUiState
+    data class UpToDate(val version: String) : UpdateUiState
+    data class Error(val message: String) : UpdateUiState
 }
 
 @Composable
