@@ -20,6 +20,7 @@ import dev.javier.fitbithealth.ui.sleep.SleepScreen
 import dev.javier.fitbithealth.ui.sleep.SleepViewModel
 import dev.javier.fitbithealth.ui.trends.TrendsScreen
 import dev.javier.fitbithealth.ui.trends.TrendsViewModel
+import dev.javier.fitbithealth.ui.metricdetail.MetricDetailScreen
 import dev.javier.fitbithealth.ui.metrics.HealthRange
 import dev.javier.fitbithealth.data.api.HealthApiFactory
 
@@ -41,11 +42,12 @@ class MainActivity : ComponentActivity() {
                 typography = AppFonts,
             ) {
                 AppNavigation(
-                    dashboardContent = {
+                    dashboardContent = { onMetricClick ->
                         DashboardScreen(
                             state = dashboardViewModel.state.collectAsState().value,
                             onRetry = { dashboardViewModel.load(java.time.LocalDate.now().toString()) },
                             onSync = { dashboardViewModel.syncNow() },
+                            onMetricClick = onMetricClick,
                         )
                     },
                     sleepContent = {
@@ -88,6 +90,13 @@ class MainActivity : ComponentActivity() {
                                     true
                                 }.getOrDefault(false)
                             },
+                        )
+                    },
+                    metricDetailContent = { metric, onBack ->
+                        MetricDetailScreen(
+                            metric = metric,
+                            api = container.apiOrNull(),
+                            onBack = onBack,
                         )
                     },
                 )

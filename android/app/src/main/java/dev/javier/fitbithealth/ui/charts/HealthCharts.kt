@@ -3,10 +3,15 @@ package dev.javier.fitbithealth.ui.charts
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -15,56 +20,67 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 /**
- * Line chart with gradient area fill, rounded caps and animated reveal.
- * Pure Canvas — no external chart library, no personal data baked in.
+ * Interactive line chart: touch / drag to inspect values at each point.
+ * Exposes [onValueSelected] with (index, value) and [onSelectionCleared].
  */
 @Composable
-fun HealthLineChart(
+fun InteractiveLineChart(
     values: List<Float>,
     modifier: Modifier = Modifier,
     color: Color = Color(0xFF00897B),
-    showArea: Boolean = true,
-    strokeWidth: Float = 4f,
+    onValueSelected: (Int, Float) -> Unit = { _, _ -> },
+    onSelectionCleared: () -> Unit = {},
 ) {
     if (values.size < 2) {
         Canvas(modifier.fillMaxWidth().height(220.dp)) {}
         return
     }
-    val progress by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(durationMillis = 900),
-        label = "chartReveal",
-    )
+    var selectedIndex by remember { mutableIntStateOf(-1) }
 
-    val visible = values.take(((values.size - 1) * progress).toInt().coerceAtLeast(2))
-    Canvas(modifier.fillMaxWidth().height(220.dp)) {
+    fun indexForX(x: Float, width: Float): Int {
+        val step = width / (values.size - 1)
+        return (x / step).roundToInt().coerceIn(0, values.size - 1)
+    }
+
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .pointerInput(values.size) {
+                detectTapGestures { offset ->
+                    selectedIndex = indexForX(offset.x, size.width.toFloat())
+                    onValueSelected(selectedIndex, values[selectedIndex])
+                }
+            }
+            .pointerInput(values.size) {
+                detectDragGestures(
+                    onDragStart = { offset ->
+                        selectedIndex = indexForX(offset.x, size.width.toFloat())
+                        onValueSelected(selectedIndex, values[selectedIndex])
+                    },
+                    onDrag = { change, _ ->
+                        change.consume()
+                        selectedIndex = indexForX(change.position.x, size.width.toFloat())
+                        onValueSelected(selectedIndex, values[selectedIndex])
+                    },
+                    onDragEnd = { onSelectionCleared(); selectedIndex = -1 },
+                    onDragCancel = { onSelectionCleared(); selectedIndex = -1 },
+                )
+            },
+    ) {
         val min = values.minOrNull() ?: return@Canvas
         val maxValue = values.maxOrNull() ?: return@Canvas
         val span = max(maxValue - min, 1f)
-        val step = size.width / (visible.size - 1).coerceAtLeast(1)
-        val points = visible.mapIndexed { index, value ->
+        val step = size.width / (values.size - 1)
+        val points = values.mapIndexed { index, value ->
             Offset(index * step, size.height - ((value - min) / span * (size.height - 24f)) - 8f)
-        }
-
-        if (showArea && points.size >= 2) {
-            val areaPath = Path().apply {
-                moveTo(points.first().x, size.height)
-                points.forEach { lineTo(it.x, it.y) }
-                lineTo(points.last().x, size.height)
-                close()
-            }
-            drawPath(
-                path = areaPath,
-                brush = Brush.verticalGradient(
-                    colors = listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0.02f)),
-                    startY = 0f,
-                    endY = size.height,
-                ),
-            )
         }
 
         // Grid lines (subtle)
@@ -74,68 +90,47 @@ fun HealthLineChart(
             drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
         }
 
-        // Baseline
-        points.forEachIndexed { i, p ->
-            if (i == 0) {
-                drawCircle(color = color, radius = strokeWidth * 0.9f, center = p)
-            } else {
-                drawLine(
-                    color = color,
-                    start = points[i - 1],
-                    end = p,
-                    strokeWidth = strokeWidth,
-                    cap = StrokeCap.Round,
-                )
-            }
+        // Area fill
+        val areaPath = Path().apply {
+            moveTo(points.first().x, size.height)
+            points.forEach { lineTo(it.x, it.y) }
+            lineTo(points.last().x, size.height)
+            close()
+        }
+        drawPath(
+            path = areaPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(color.copy(alpha = 0.28f), color.copy(alpha = 0.02f)),
+                startY = 0f,
+                endY = size.height,
+            ),
+        )
+
+        // Line
+        points.zipWithNext().forEach { (start, end) ->
+            drawLine(color = color, start = start, end = end, strokeWidth = 4f, cap = StrokeCap.Round)
         }
 
-        // End dot
-        drawCircle(color = Color.White, radius = strokeWidth + 3f, center = points.last())
-        drawCircle(color = color, radius = strokeWidth, center = points.last())
-    }
-}
-
-/** Rounded horizontal bars (sleep stages, comparisons). */
-@Composable
-fun HealthBarChart(
-    values: List<Float>,
-    modifier: Modifier = Modifier,
-    colors: List<Color> = emptyList(),
-    color: Color = Color(0xFF00897B),
-    barHeight: Float = 220f,
-) {
-    val progress by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = tween(durationMillis = 700),
-        label = "barReveal",
-    )
-    Canvas(modifier.fillMaxWidth().height(barHeight.dp)) {
-        if (values.isEmpty()) return@Canvas
-        val total = values.sum().coerceAtLeast(1f)
-        val gap = size.width * 0.02f
-        val barW = (size.width - gap * (values.size - 1)) / values.size
-        values.forEachIndexed { index, value ->
-            val fraction = value / total
-            val barH = (size.height * fraction * progress).coerceAtLeast(0f)
-            val fill = colors.getOrNull(index) ?: color
-            drawRoundRect(
-                color = fill,
-                topLeft = Offset(index * (barW + gap), size.height - barH),
-                size = Size(barW, barH),
-                cornerRadius = CornerRadius(barW * 0.35f, barW * 0.35f),
+        // Selected point: crosshair + dot
+        if (selectedIndex in points.indices) {
+            val p = points[selectedIndex]
+            drawLine(
+                color = color.copy(alpha = 0.35f),
+                start = Offset(p.x, 0f),
+                end = Offset(p.x, size.height),
+                strokeWidth = 1.5f,
             )
-            // Track behind
-            drawRoundRect(
-                color = fill.copy(alpha = 0.12f),
-                topLeft = Offset(index * (barW + gap), 0f),
-                size = Size(barW, size.height),
-                cornerRadius = CornerRadius(barW * 0.35f, barW * 0.35f),
-            )
+            drawCircle(color = Color.White, radius = 8f, center = p)
+            drawCircle(color = color, radius = 6f, center = p)
+            drawCircle(color = Color.White, radius = 2.5f, center = p)
+        } else {
+            drawCircle(color = Color.White, radius = 6f, center = points.last())
+            drawCircle(color = color, radius = 4f, center = points.last())
         }
     }
 }
 
-/** Horizontal stacked bar — for sleep stages proportions. */
+/** Segmented horizontal bar used for sleep stage composition. */
 @Composable
 fun HealthStackedBar(
     segments: List<Pair<Float, Color>>,
@@ -169,7 +164,7 @@ fun HealthStackedBar(
     }
 }
 
-/** Small round "chip" showing a colored dot + label — for legends. */
+/** Small round dot for legends. */
 @Composable
 fun LegendDot(color: Color) {
     Canvas(Modifier.height(10.dp)) {

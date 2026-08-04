@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.MonitorHeart
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import dev.javier.fitbithealth.ui.theme.MetricColors
 
 private data class MetricCardData(
+    val key: String,
     val title: String,
     val value: String,
     val subtitle: String,
@@ -63,6 +65,7 @@ fun DashboardScreen(
     state: DashboardState,
     onRetry: () -> Unit,
     onSync: () -> Unit,
+    onMetricClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     when (state) {
@@ -79,16 +82,17 @@ fun DashboardScreen(
             Text(state.message, color = MaterialTheme.colorScheme.error)
             Button(onClick = onRetry) { Text("Reintentar") }
         }
-        is DashboardState.Ready -> DashboardContent(state, onSync)
+        is DashboardState.Ready -> DashboardContent(state, onSync, onMetricClick)
     }
 }
 
 @Composable
-private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit) {
+private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit, onMetricClick: (String) -> Unit) {
     val dashboard = state.dashboard
     val cards = buildList {
         dashboard.sleep?.let {
             add(MetricCardData(
+                "sleep",
                 "Sueño",
                 "${(it.minutesAsleep ?: 0) / 60}h ${(it.minutesAsleep ?: 0) % 60}m",
                 "anoche",
@@ -97,16 +101,16 @@ private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit) {
             ))
         }
         dashboard.restingHeartRate?.let {
-            add(MetricCardData("Ritmo en reposo", "$it", "bpm", MetricColors.HeartRate, Icons.Default.Favorite))
+            add(MetricCardData("rhr", "Ritmo en reposo", "$it", "bpm", MetricColors.HeartRate, Icons.Default.Favorite))
         }
         dashboard.hrv?.let {
-            add(MetricCardData("HRV", "${it.toInt()}", "ms", MetricColors.HRV, Icons.Default.MonitorHeart))
+            add(MetricCardData("hrv", "HRV", "${it.toInt()}", "ms", MetricColors.HRV, Icons.Default.MonitorHeart))
         }
         dashboard.spo2?.let {
-            add(MetricCardData("SpO₂", "${it}", "%", MetricColors.Spo2, Icons.Default.FlashOn))
+            add(MetricCardData("spo2", "SpO₂", "$it", "%", MetricColors.Spo2, Icons.Default.FlashOn))
         }
         dashboard.steps?.let {
-            add(MetricCardData("Pasos", it.toString(), "hoy", MetricColors.Steps, Icons.Default.Timeline))
+            add(MetricCardData("steps", "Pasos", it.toString(), "hoy", MetricColors.Steps, Icons.Default.Timeline))
         }
     }
 
@@ -152,7 +156,7 @@ private fun DashboardContent(state: DashboardState.Ready, onSync: () -> Unit) {
                     visible = true,
                     enter = fadeIn(tween(400)) + slideInVertically(tween(400), initialOffsetY = { it / 4 }),
                 ) {
-                    MetricCard(card)
+                    MetricCard(card, onClick = { onMetricClick(card.key) })
                 }
             }
         }
@@ -186,8 +190,9 @@ private fun HeroCard(title: String, subtitle: String, modifier: Modifier = Modif
 }
 
 @Composable
-private fun MetricCard(card: MetricCardData) {
+private fun MetricCard(card: MetricCardData, onClick: () -> Unit) {
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .semantics { contentDescription = "${card.title}: ${card.value} ${card.subtitle}" },
@@ -208,6 +213,13 @@ private fun MetricCard(card: MetricCardData) {
                 ) {
                     Icon(card.icon, contentDescription = null, tint = card.color, modifier = Modifier.size(20.dp))
                 }
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "Ver detalle",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp),
+                )
             }
             Spacer(Modifier.height(14.dp))
             Text(card.value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)

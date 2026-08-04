@@ -23,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 
 @Serializable data object DashboardRoute
@@ -30,16 +31,18 @@ import kotlinx.serialization.Serializable
 @Serializable data object TrendsRoute
 @Serializable data object ChatRoute
 @Serializable data object SettingsRoute
+@Serializable data class MetricDetailRoute(val metric: String)
 
 private data class NavItem<T : Any>(val route: T, val label: String, val icon: ImageVector)
 
 @Composable
 fun AppNavigation(
-    dashboardContent: @Composable () -> Unit = { Text("Dashboard") },
+    dashboardContent: @Composable (onMetricClick: (String) -> Unit) -> Unit = { _ -> Text("Dashboard") },
     sleepContent: @Composable () -> Unit = { Text("Sueño") },
     trendsContent: @Composable () -> Unit = { Text("Tendencias") },
     chatContent: @Composable () -> Unit = { Text("Chat de salud") },
     settingsContent: @Composable () -> Unit = { Text("Ajustes") },
+    metricDetailContent: @Composable (String, onBack: () -> Unit) -> Unit = { _, _ -> },
 ) {
     val navController = rememberNavController()
     val items = listOf(
@@ -82,11 +85,23 @@ fun AppNavigation(
             startDestination = DashboardRoute,
             modifier = Modifier.padding(padding),
         ) {
-            composable<DashboardRoute> { dashboardContent() }
+        composable<DashboardRoute> {
+            dashboardContent { metric ->
+                navController.navigate(MetricDetailRoute(metric)) {
+                    launchSingleTop = true
+                }
+            }
+        }
             composable<SleepRoute> { sleepContent() }
             composable<TrendsRoute> { trendsContent() }
             composable<ChatRoute> { chatContent() }
             composable<SettingsRoute> { settingsContent() }
+            composable<MetricDetailRoute> { entry ->
+                val route = entry.toRoute<MetricDetailRoute>()
+                metricDetailContent(route.metric) {
+                    navController.popBackStack()
+                }
+            }
         }
     }
 }
