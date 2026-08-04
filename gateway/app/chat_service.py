@@ -45,9 +45,21 @@ class HealthChatService:
             "Eres un asistente de salud centrado exclusivamente en datos Fitbit. "
             "No diagnostiques ni ejecutes herramientas generales. Explica límites y recomienda "
             "consultar a un profesional cuando corresponda.\n"
+            "IMPORTANTE: Responde de forma breve y directa. Máximo 3-4 frases, "
+            "al grano, sin listas largas, sin relleno ni disclaimers repetidos. "
+            "Usa los datos concretos del contexto cuando sea relevante.\n"
             f"Pregunta del usuario: {message}\n"
             f"Datos Fitbit disponibles: {serialized}"
         )
+
+    def stream_answer(self, prompt: str, chunk_size: int = 24, delay_s: float = 0.02):
+        """Ejecuta Hermes y emite la respuesta en chunks (typewriter) para SSE."""
+        answer = self.ask_hermes(prompt)
+        for i in range(0, len(answer), chunk_size):
+            yield answer[i:i + chunk_size]
+            if delay_s:
+                import time
+                time.sleep(delay_s)
     @staticmethod
     def redact(value: str) -> str:
         value = re.sub(r"Bearer\s+[^\s]+", "Bearer [REDACTED]", value, flags=re.IGNORECASE)

@@ -11,10 +11,18 @@ class AppContainer(context: Context) {
 
     fun currentSettings(): AppSettings = settings
 
-    fun apiOrNull(): HealthApi? {
+    /** Devuelve par (url, token) si configurado, si no null. */
+    fun credentialsOrNull(): Pair<String, String>? {
         val url = settings.gatewayUrl
         val token = settings.gatewayToken
         if (url.isBlank() || token.isBlank()) return null
+        return url to token
+    }
+
+    fun apiOrNull(): HealthApi? {
+        val (url, token) = credentialsOrNull() ?: return null
         return runCatching { factory.create(url, token) }.getOrNull()
     }
+
+    fun factory(): HealthApiFactory = factory
 }

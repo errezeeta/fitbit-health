@@ -49,8 +49,13 @@ fun HealthChatScreen(
     val messages = when (state) {
         ChatState.Idle -> emptyList()
         is ChatState.Ready -> state.messages
+        is ChatState.Streaming -> state.messages
         is ChatState.Sending -> state.messages
         is ChatState.Error -> state.messages
+    }
+    val streamingPartial = when (state) {
+        is ChatState.Streaming -> state.partial
+        else -> null
     }
     val listState = rememberLazyListState()
     LaunchedEffect(messages.size) {
@@ -88,6 +93,36 @@ fun HealthChatScreen(
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                             Spacer(Modifier.width(8.dp))
                             Text("Hermes está pensando...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    is ChatState.Streaming -> item {
+                        // Burbuja del asistente con texto parcial (streaming)
+                        Row(verticalAlignment = Alignment.Top) {
+                            Box(
+                                Modifier
+                                    .clip(
+                                        RoundedCornerShape(
+                                            topStart = 16.dp, topEnd = 16.dp,
+                                            bottomStart = 4.dp, bottomEnd = 16.dp,
+                                        )
+                                    )
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                            ) {
+                                Column {
+                                    Text(
+                                        streamingPartial?.ifBlank { "…" } ?: "…",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Spacer(Modifier.size(6.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("escribiendo…", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                            }
                         }
                     }
                     is ChatState.Error -> item {

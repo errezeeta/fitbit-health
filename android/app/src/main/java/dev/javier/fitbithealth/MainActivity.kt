@@ -95,6 +95,9 @@ class MainActivity : ComponentActivity() {
                                 sleepViewModel.updateApi(newApi)
                                 chatViewModel.updateApi(newApi)
                                 trendsViewModel.updateApi(newApi)
+                                container.credentialsOrNull()?.let { (url, token) ->
+                                    chatViewModel.updateCredentials(container.factory(), url, token)
+                                }
                                 loadAll()
                             },
                             onTestConnection = { url, token ->
@@ -125,6 +128,9 @@ class MainActivity : ComponentActivity() {
         sleepViewModel = SleepViewModel(api)
         chatViewModel = HealthChatViewModel(api)
         trendsViewModel = TrendsViewModel(api)
+        container.credentialsOrNull()?.let { (url, token) ->
+            chatViewModel.updateCredentials(container.factory(), url, token)
+        }
     }
 
     private fun loadAll() {

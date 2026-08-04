@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import dev.javier.fitbithealth.data.api.MetricPoint
@@ -93,7 +94,23 @@ private fun DashboardContent(
     // Punto seleccionado al tocar el gráfico
     var selectedPoint by remember { mutableStateOf<MetricPoint?>(null) }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize()) {
+        // Fondo ambiental tipo landing Hermes: glow azul difuso arriba
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(320.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                            Color.Transparent,
+                        )
+                    )
+                )
+        )
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             Column(Modifier.padding(horizontal = 20.dp)) {
                 Spacer(Modifier.height(12.dp))
@@ -200,6 +217,7 @@ private fun DashboardContent(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
         }
     }
 }

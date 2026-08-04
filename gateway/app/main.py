@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+import json
 import subprocess
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
@@ -77,19 +78,40 @@ def create_app(*, database_path: str, gateway_token: str) -> FastAPI:
     def chat(payload: dict, _: bool = Depends(auth)):
         try:
             message = chat_service.validate_message(payload.get("message", ""))
-            context = dict(payload.get("context") or {})
-            if not context:
-                # Contexto automático: último día con datos + tendencias
-                context = build_health_context()
+            context = payload.get("context") or build_health_context()
             prompt = chat_service.build_prompt(message, context)
             answer = chat_service.ask_hermes(prompt)
+            return chat_service.format_response(answer, sources=[])
         except ValueError as error:
             raise HTTPException(status_code=400, detail=str(error)) from error
-        except (TimeoutError, subprocess.TimeoutExpired) as error:
-            raise HTTPException(status_code=504, detail="El chat ha superado el tiempo límite; inténtalo de nuevo.") from error
-        except RuntimeError as error:
-            raise HTTPException(status_code=502, detail=f"No se pudo contactar con Hermes: {error}") from error
-        return chat_service.format_response(answer, ["fitbit-context"])
+        except Exception as error:
+            raise HTTPException(status_code=500, detail=chat_service.safe_error(error)) from error
+
+    @app.post("/api/v1/chat/stream")
+    def chat_stream(payload: dict, _: bool = Depends(auth)):
+        try:
+            message = chat_service.validate_message(payload.get("message", ""))
+            context = payload.get("context") or build_health_context()
+            prompt = chat_service.build_prompt(message, context)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+
+        from fastapi.responses import StreamingResponse
+
+        def event_source():
+            try:
+                for chunk in chat_service.stream_answer(prompt):
+                    yield f"data: {json.dumps({'token': chunk}, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as error:  # noqa: BLE001
+                detail = chat_service.safe_error(error)
+                yield f"event: error\ndata: {json.dumps(detail, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            event_source(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     def build_health_context() -> dict[str, Any]:
         today = date.today().isoformat()
