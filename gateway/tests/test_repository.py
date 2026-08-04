@@ -41,7 +41,15 @@ def test_repository_reads_dashboard_and_sleep(tmp_path):
 def test_repository_returns_metric_series_and_empty_results(tmp_path):
     repo = FitbitRepository(make_db(tmp_path))
     assert repo.metric_series("hrv", "2026-08-03", "2026-08-03")[0]["value"] == 38.0
-    assert repo.metric_series("hrv", "2025-01-01", "2025-01-02") == []
+    # Rango sin datos: devuelve fallback con el histórico disponible (últimos puntos)
+    fallback = repo.metric_series("hrv", "2025-01-01", "2025-01-02")
+    assert fallback and fallback[-1]["value"] == 38.0
+
+
+def test_repository_sleep_falls_back_when_range_empty(tmp_path):
+    repo = FitbitRepository(make_db(tmp_path))
+    fallback = repo.sleep("2025-01-01", "2025-01-02")
+    assert fallback and fallback[0]["minutes_asleep"] == 342
 
 
 def test_repository_rejects_unknown_metric(tmp_path):

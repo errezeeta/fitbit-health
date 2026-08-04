@@ -69,7 +69,21 @@ class FitbitRepository:
                 "SELECT * FROM sleep WHERE date_of_sleep BETWEEN ? AND ? ORDER BY date_of_sleep DESC LIMIT ?",
                 (start, end, self.max_rows),
             ).fetchall()
-            return [dict(row) for row in rows]
+            result = [dict(row) for row in rows]
+            if not result:
+                # Fallback: último día con sueño registrado
+                latest = self._latest_sleep_day(connection)
+                if latest:
+                    rows = connection.execute(
+                        "SELECT * FROM sleep WHERE date_of_sleep = ? ORDER BY end_time DESC LIMIT ?",
+                        (latest, self.max_rows),
+                    ).fetchall()
+                    result = [dict(row) for row in rows]
+            return result
+
+    def _latest_sleep_day(self, connection: sqlite3.Connection) -> str | None:
+        row = connection.execute("SELECT MAX(date_of_sleep) FROM sleep").fetchone()
+        return row[0] if row and row[0] else None
 
     def metric_series(self, metric: str, start: str, end: str) -> list[dict[str, Any]]:
         if metric not in self.METRICS:
@@ -82,7 +96,16 @@ class FitbitRepository:
         )
         with self._connect() as connection:
             rows = connection.execute(query, (start, end, self.max_rows)).fetchall()
-            return [dict(row) for row in rows]
+            result = [dict(row) for row in rows]
+            if not result:
+                # Fallback: últimos puntos disponibles del histórico
+                fallback = connection.execute(
+                    f"SELECT {date_column} AS date, {value_column} AS value "
+                    f"FROM {table} ORDER BY {date_column} DESC LIMIT ?",
+                    (self.max_rows,),
+                ).fetchall()
+                result = [dict(row) for row in reversed(fallback)]
+            return result
 
     @staticmethod
     def _value(connection: sqlite3.Connection, query: str, day: str) -> Any:

@@ -3,8 +3,12 @@ package dev.javier.fitbithealth
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
+import dev.javier.fitbithealth.ui.theme.LightThemeColors
+import dev.javier.fitbithealth.ui.theme.DarkThemeColors
+import dev.javier.fitbithealth.ui.theme.AppFonts
 import dev.javier.fitbithealth.data.api.HealthApi
 import dev.javier.fitbithealth.ui.dashboard.DashboardViewModel
 import dev.javier.fitbithealth.ui.chat.HealthChatScreen
@@ -31,7 +35,11 @@ class MainActivity : ComponentActivity() {
         container = AppContainer(applicationContext)
         initViewModels()
         setContent {
-            MaterialTheme {
+            val dark = isSystemInDarkTheme()
+            MaterialTheme(
+                colorScheme = if (dark) DarkThemeColors else LightThemeColors,
+                typography = AppFonts,
+            ) {
                 AppNavigation(
                     dashboardContent = {
                         DashboardScreen(
