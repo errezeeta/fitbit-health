@@ -63,10 +63,10 @@ fun DashboardScreen(
         is DashboardState.Ready -> {
             val dashboard = state.dashboard
             val cards = buildList {
-                dashboard.sleep?.let { add(MetricCard("Sueño", "${it.minutesAsleep / 60}h ${it.minutesAsleep % 60}m", Color(0xFF6750A4), Icons.Default.Bedtime)) }
+                dashboard.sleep?.let { add(MetricCard("Sueño", "${(it.minutesAsleep ?: 0) / 60}h ${(it.minutesAsleep ?: 0) % 60}m", Color(0xFF6750A4), Icons.Default.Bedtime)) }
                 dashboard.restingHeartRate?.let { add(MetricCard("Ritmo en reposo", "$it bpm", Color(0xFFB3261E), Icons.Default.Favorite)) }
                 dashboard.hrv?.let { add(MetricCard("HRV", "${it.toInt()} ms", Color(0xFF006A6A), Icons.Default.MonitorHeart)) }
-                dashboard.spo2?.let { add(MetricCard("SpO₂", "${it}%", Color(0xFF386A20), Icons.Default.FlashOn)) }
+                dashboard.spo2?.let { add(MetricCard("SpO₂", "$it%", Color(0xFF386A20), Icons.Default.FlashOn)) }
                 dashboard.steps?.let { add(MetricCard("Pasos", it.toString(), Color(0xFF7D5700), Icons.Default.Timeline)) }
             }
             Column(modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)) {

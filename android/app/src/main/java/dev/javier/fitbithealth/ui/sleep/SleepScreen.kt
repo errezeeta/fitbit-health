@@ -37,10 +37,10 @@ fun SleepScreen(state: SleepState, modifier: Modifier = Modifier) {
                     SleepSummary(latest)
                     HealthBarChart(
                         values = listOf(
-                            latest.deepMinutes.toFloat(),
-                            latest.lightMinutes.toFloat(),
-                            latest.remMinutes.toFloat(),
-                            latest.awakeMinutes.toFloat(),
+                            (latest.deepMinutes ?: 0).toFloat(),
+                            (latest.lightMinutes ?: 0).toFloat(),
+                            (latest.remMinutes ?: 0).toFloat(),
+                            (latest.awakeMinutes ?: 0).toFloat(),
                         ),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -57,12 +57,12 @@ private fun SleepSummary(session: SleepSession) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Sueño", style = MaterialTheme.typography.titleLarge)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(session.startTime)
-                Text(session.endTime)
+                Text(session.startTime ?: "—")
+                Text(session.endTime ?: "—")
             }
-            Text("Dormido: ${session.minutesAsleep} min")
-            Text("Despierto: ${session.minutesAwake} min")
-            Text("Fases: profundo ${session.deepMinutes} · ligero ${session.lightMinutes} · REM ${session.remMinutes}")
+            Text("Dormido: ${session.minutesAsleep ?: 0} min")
+            Text("Despierto: ${session.minutesAwake ?: 0} min")
+            Text("Fases: profundo ${session.deepMinutes ?: 0} · ligero ${session.lightMinutes ?: 0} · REM ${session.remMinutes ?: 0}")
         }
     }
 }

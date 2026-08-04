@@ -26,16 +26,42 @@ class FitbitRepository:
 
     def dashboard(self, day: str) -> dict[str, Any]:
         with self._connect() as connection:
-            result: dict[str, Any] = {}
-            result["resting_heart_rate"] = self._value(connection, "SELECT resting_heart_rate FROM heart_rate_daily WHERE date = ?", day)
-            result["steps"] = self._value(connection, "SELECT total_steps FROM steps_daily WHERE date = ?", day)
-            result["hrv"] = self._value(connection, "SELECT rmssd FROM hrv WHERE date = ?", day)
-            result["spo2"] = self._value(connection, "SELECT avg_value FROM spo2 WHERE date = ?", day)
-            sleep = connection.execute(
-                "SELECT * FROM sleep WHERE date_of_sleep = ? ORDER BY end_time DESC LIMIT 1", (day,)
-            ).fetchone()
-            result["sleep"] = dict(sleep) if sleep else None
+            result = self._dashboard_for(connection, day)
+            if not any(v is not None for v in (result["resting_heart_rate"], result["steps"], result["hrv"], result["spo2"], result["sleep"])):
+                latest = self._latest_data_day(connection)
+                if latest is not None:
+                    fallback = self._dashboard_for(connection, latest)
+                    fallback["date"] = latest
+                    fallback["fallback_from"] = day
+                    return fallback
+            result["date"] = day
             return result
+
+    def _latest_data_day(self, connection: sqlite3.Connection) -> str | None:
+        days: list[str] = []
+        for table, column, _ in self.METRICS.values():
+            try:
+                row = connection.execute(f"SELECT MAX({column}) FROM {table}").fetchone()
+                if row and row[0]:
+                    days.append(row[0])
+            except sqlite3.OperationalError:
+                continue
+        row = connection.execute("SELECT MAX(date_of_sleep) FROM sleep").fetchone()
+        if row and row[0]:
+            days.append(row[0])
+        return max(days) if days else None
+
+    def _dashboard_for(self, connection: sqlite3.Connection, day: str) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        result["resting_heart_rate"] = self._value(connection, "SELECT resting_heart_rate FROM heart_rate_daily WHERE date = ?", day)
+        result["steps"] = self._value(connection, "SELECT total_steps FROM steps_daily WHERE date = ?", day)
+        result["hrv"] = self._value(connection, "SELECT rmssd FROM hrv WHERE date = ?", day)
+        result["spo2"] = self._value(connection, "SELECT avg_value FROM spo2 WHERE date = ?", day)
+        sleep = connection.execute(
+            "SELECT * FROM sleep WHERE date_of_sleep = ? ORDER BY end_time DESC LIMIT 1", (day,)
+        ).fetchone()
+        result["sleep"] = dict(sleep) if sleep else None
+        return result
 
     def sleep(self, start: str, end: str) -> list[dict[str, Any]]:
         with self._connect() as connection:

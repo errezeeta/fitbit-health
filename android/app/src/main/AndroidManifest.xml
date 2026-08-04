@@ -5,6 +5,7 @@
         android:allowBackup="false"
         android:label="Fitbit Health"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.FitbitHealth">
         <activity
             android:name=".MainActivity"

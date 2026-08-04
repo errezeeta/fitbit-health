@@ -1,5 +1,6 @@
 package dev.javier.fitbithealth.data.api
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,29 +11,39 @@ data class MetricPoint(
 
 @Serializable
 data class SleepSession(
-    val startTime: String,
-    val endTime: String,
-    val minutesAsleep: Int,
-    val minutesAwake: Int,
-    val deepMinutes: Int = 0,
-    val lightMinutes: Int = 0,
-    val remMinutes: Int = 0,
-    val awakeMinutes: Int = 0,
+    @SerialName("id") val id: Long? = null,
+    @SerialName("google_id") val googleId: String? = null,
+    @SerialName("date_of_sleep") val dateOfSleep: String? = null,
+    @SerialName("start_time") val startTime: String? = null,
+    @SerialName("end_time") val endTime: String? = null,
+    @SerialName("minutes_in_sleep_period") val minutesInSleepPeriod: Int? = null,
+    @SerialName("minutes_asleep") val minutesAsleep: Int? = null,
+    @SerialName("minutes_awake") val minutesAwake: Int? = null,
+    @SerialName("deep_minutes") val deepMinutes: Int? = null,
+    @SerialName("light_minutes") val lightMinutes: Int? = null,
+    @SerialName("rem_minutes") val remMinutes: Int? = null,
+    @SerialName("awake_minutes") val awakeMinutes: Int? = null,
+    @SerialName("deep_count") val deepCount: Int? = null,
+    @SerialName("light_count") val lightCount: Int? = null,
+    @SerialName("rem_count") val remCount: Int? = null,
+    @SerialName("awake_count") val awakeCount: Int? = null,
+    @SerialName("minutes_to_fall_asleep") val minutesToFallAsleep: Int? = null,
+    @SerialName("minutes_after_wakeup") val minutesAfterWakeup: Int? = null,
 )
 
 @Serializable
 data class DashboardResponse(
-    val metrics: Map<String, MetricPoint> = emptyMap(),
-    val sleep: SleepSession? = null,
+    val date: String? = null,
+    @SerialName("resting_heart_rate") val restingHeartRate: Int? = null,
     val steps: Int? = null,
-    val restingHeartRate: Int? = null,
     val hrv: Double? = null,
     val spo2: Double? = null,
+    val sleep: SleepSession? = null,
 )
 
 @Serializable
 data class SyncJobResponse(
-    val jobId: String,
+    @SerialName("job_id") val jobId: String,
     val status: String,
     val detail: String? = null,
 )
@@ -47,5 +58,5 @@ data class ChatRequest(
 data class ChatResponse(
     val answer: String,
     val sources: List<String> = emptyList(),
-    val medicalDisclaimer: Boolean = true,
+    @SerialName("medical_disclaimer") val medicalDisclaimer: Boolean = true,
 )
