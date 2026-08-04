@@ -36,7 +36,7 @@ import dev.javier.fitbithealth.ui.theme.NeoSurface
 
 private val DeepColor = Color(0xFF8E8E93)   // gris Apple
 private val LightColor = Color(0xFFB0B0B5)  // gris claro
-private val RemColor = Color(0xFF2F6BFF)    // único acento
+private val RemColor = Color(0xFFD9A962)    // único acento (ámbar Pulse)
 private val AwakeColor = Color(0xFF4A4A4F)  // gris oscuro
 
 @Composable

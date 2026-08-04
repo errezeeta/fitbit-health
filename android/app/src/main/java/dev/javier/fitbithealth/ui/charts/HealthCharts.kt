@@ -38,7 +38,7 @@ import kotlin.math.sin
 fun InteractiveLineChart(
     values: List<Float>,
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFF2F6BFF),
+    color: Color = Color(0xFFD9A962),
     onValueSelected: (Int, Float) -> Unit = { _, _ -> },
     onSelectionCleared: () -> Unit = {},
 ) {
