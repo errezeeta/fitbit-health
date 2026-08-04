@@ -92,6 +92,24 @@ val LightThemeColors = LightColors
 val DarkThemeColors = DarkColors
 val AppFonts = AppTypography
 
+/** Face de datos: lecturas de instrumento en monoespaciado. */
+object DataFace {
+    val Value = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 20.sp,
+        letterSpacing = (-0.3).sp,
+    )
+    val ValueSmall = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = (-0.2).sp,
+    )
+}
+
 // Casi todo neutro; el ámbar solo donde el dato importa.
 object MetricColors {
     val HeartRate = Accent

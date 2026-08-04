@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import dev.javier.fitbithealth.ui.charts.InteractiveLineChart
+import dev.javier.fitbithealth.ui.theme.DataFace
 import dev.javier.fitbithealth.ui.theme.MetricColors
 import dev.javier.fitbithealth.ui.theme.NeoOnSurfaceMuted
 import dev.javier.fitbithealth.ui.theme.NeoOutline
@@ -127,6 +128,13 @@ private fun DashboardContent(
                         color = NeoOnSurfaceMuted,
                     )
                 }
+                Spacer(Modifier.height(6.dp))
+                // Insight editorial calculado
+                Text(
+                    rhrInsight(rhr, heartRateValues),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = NeoOnSurfaceMuted,
+                )
                 Spacer(Modifier.height(18.dp))
             }
         }
@@ -188,7 +196,7 @@ private fun StatRow(label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = NeoOnSurfaceMuted, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text(value, style = DataFace.Value, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -218,4 +226,18 @@ private fun heartRateStats(values: List<Float>): String {
     val min = values.minOrNull()?.toInt()
     val max = values.maxOrNull()?.toInt()
     return if (min != null && max != null) "$min – $max bpm" else ""
+}
+
+/** Insight editorial: una frase calculada con los datos reales del día. */
+private fun rhrInsight(rhr: Int?, values: List<Float>): String {
+    val resting = rhr ?: return "Sin lectura de reposo hoy."
+    val low = values.minOrNull()?.toInt()
+    val high = values.maxOrNull()?.toInt()
+    val text = when {
+        resting < 60 -> "Por debajo de 60 bpm: ritmo de atleta."
+        resting in 60..75 -> "Dentro del rango saludable (60–75 bpm)."
+        resting in 76..90 -> "Un poco elevado (76–90 bpm). ¿Estrés o falta de sueño?"
+        else -> "Elevado (>90 bpm). Consulta a un profesional."
+    }
+    return if (low != null && high != null) "$text Rango del día: $low–$high bpm." else text
 }
